@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>LocalModelViewer</title>
+
+
+    <link rel="stylesheet" href="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/style.min.css" type="text/css">
+    <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.min.js"></script>
+</head>
+
+<style>
+    body {
+        margin: 0;
+    }
+</style>
+
+<body>
+    <div id="viewer"></div>
+</body>
+
+
+<script async>
+    let docs = [{"path": "./radiosity/radiosity.svf", "name": "Design"}];
+    // let docs = [{"path": "./radiosity_AllZero/radiosity.svf", "name": "Design"}];
+    // let docs = [{"path": "./radiosity_0.10.0/radiosity.svf", "name": "Design"}];
+    // let docs = [{"path": "./radiosity_match/radiosity.svf", "name": "Design"}];
+    // let docs = [{"path": "./radiosity_new_cam/radiosity.svf", "name": "Design"}];
+
+    let options = {'docid': docs [0].path, env: 'Local'};
+
+    let viewerDiv = document.getElementById("viewer");
+    oViewer = new Autodesk.Viewing.Private.GuiViewer3D(viewerDiv, {}); // With toolbar
+    Autodesk.Viewing.Initializer(options, function () {
+        oViewer.initialize();
+        oViewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, function (event) {
+            oViewer.fitToView(true);
+        });
+        oViewer.loadModel(options.docid);
+
+    });
+</script>
+</html>
