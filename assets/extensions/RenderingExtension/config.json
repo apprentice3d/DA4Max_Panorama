@@ -1,0 +1,13 @@
+{
+    "name":"RenderingExtension",
+    "displayname": "Rendering Extension",
+    "description": "Rendering Extension illustrates integration with Design Automation for 3ds Max.",
+    "options":{},
+    "viewerversion":"7.*",
+    "loadonstartup": "false",
+    "filestoload":{
+        "cssfiles":["main.css"],
+        "jsfiles":["main.js"]
+    },
+    "includeinlist":"false"
+}

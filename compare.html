@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Comparing renderings</title>
+
+    <link href="./assets/js/twentytwenty/css/foundation.css" rel="stylesheet" type="text/css" />
+    <link href="./assets/js/twentytwenty/css/twentytwenty.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+
+<div class="row" style="margin-top: 2em;">
+    <div class="large-4 columns">
+        <h3 style="text-align: center">Comparing images</h3>
+    </div>
+    <div class="large-12 columns">
+        <div class="twentytwenty-container">
+            <img src="./assets/imgs/01.ViewerRendering.png" />
+            <img src="./assets/imgs/02.MaxRendering.jpg" />
+        </div>
+    </div>
+</div>
+
+<div class="row" style="margin-top: 2em;">
+
+    <div class="large-12 columns">
+        <div class="twentytwenty-container">
+            <img src="./assets/imgs/03a.ViewerRendering.png" />
+            <img src="./assets/imgs/04.MaxRendering.jpg" />
+        </div>
+    </div>
+</div>
+<div class="large-4 columns">
+    <h3> ... </h3>
+</div>
+
+<script
+        src="https://code.jquery.com/jquery-3.2.1.js"
+        integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE="
+        crossorigin="anonymous"></script>
+<script src="./assets/js/twentytwenty/js/jquery.event.move.js"></script>
+<script src="./assets/js/twentytwenty/js/jquery.twentytwenty.js"></script>
+<script>
+    $(function(){
+        $(".twentytwenty-container[data-orientation!='vertical']").twentytwenty({default_offset_pct: 0.7, before_label: "Viewer", after_label: "3ds Max"});
+        $(".twentytwenty-container[data-orientation='vertical']").twentytwenty({default_offset_pct: 0.3, orientation: 'vertical'});
+    });
+</script>
+</body>
+</html>

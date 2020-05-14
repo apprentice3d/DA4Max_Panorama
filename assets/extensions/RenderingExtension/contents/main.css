@@ -1,0 +1,14 @@
+.RenderDialogIcon {
+    background-image: url(img/icon.png);
+    background-size: 24px;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+#RenderDialogContainer {
+    top: 100px;
+    right: 10px;
+    width: 800px;
+    height: 600px;
+    resize: none;
+}
