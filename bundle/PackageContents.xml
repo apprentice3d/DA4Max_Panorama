@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ApplicationPackage
+        SchemaVersion="1.0"
+        AutodeskProduct="3ds Max"
+        ProductType="Application"
+        ProductCode="3ds Max Rendering Tools plugin">
+    <CompanyDetails />
+    <Components Description="pre-start-up scripts parts">
+        <RuntimeRequirements
+                OS="Win64"
+                Platform="3ds Max"
+                SeriesMin="2018"
+                SeriesMax="2020" />
+        <ComponentEntry
+                AppName="RenderingTools"
+                Version="1.0.0"
+                ModuleName="./Content/RenderingTools.ms" />
+    </Components>
+</ApplicationPackage>

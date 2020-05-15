@@ -25,7 +25,7 @@ Inside this folder, the first thing that should be present is ` PackageContents.
 
 > and the minimal amount of specification needed inside ` PackageContents.xml` could be the following:
 
->	```xml
+>	```html
 >	
 >	<?xml version="1.0" encoding="utf-8"?>
 >	<ApplicationPackage 
@@ -46,7 +46,7 @@ Inside this folder, the first thing that should be present is ` PackageContents.
 >					Version="2.1.0" 
 >					ModuleName="./Contents/ManagedAssemblies/2017/ADNExplodeGeometry.dll" />
 >		</Components>
->	  
+>	</ApplicationPackage>
 >	```
 
 
@@ -104,12 +104,12 @@ The bundle format is assuring that the plugin is self-contained and will be pick
 > 
 > ```xml
 > <?xml version="1.0" encoding="utf-8"?>
-><ApplicationPackage 
+> <ApplicationPackage 
 >					SchemaVersion="1.0"
 >					AutodeskProduct="3ds Max"
 >					ProductType="Application"
 >					ProductCode="3ds Max Design Share Plugin">
-><CompanyDetails />
+> <CompanyDetails />
 >	<Components Description="pre-start-up scripts parts">
 >		<RuntimeRequirements 
 >				OS="Win64" 
@@ -121,7 +121,7 @@ The bundle format is assuring that the plugin is self-contained and will be pick
 >				Version="1.0.0"  
 >				ModuleName="./Content/ListMyObjects.ms" />
 >	</Components>
-></ApplicationPackage>
+> </ApplicationPackage>
 > ```
 > zip it and if our current bundle is located at `C:\my_bundle`, then before invoking the `3dsmaxbatch.exe`, we should write in Command Prompt
 > 
