@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Panorama</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    <style>
+        #panorama {
+            width: 800px;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="panorama"></div>
+<script>
+    pannellum.viewer('panorama', {
+        "type": "cubemap",
+        "cubeMap": [
+            "./assets/imgs/panorama/front.jpg",
+            "./assets/imgs/panorama/left.jpg",
+            "./assets/imgs/panorama/back.jpg",
+            "./assets/imgs/panorama/right.jpg",
+            "./assets/imgs/panorama/top.jpg",
+            "./assets/imgs/panorama/bottom.jpg",
+        ]
+    });
+</script>
+
+</body>
+</html>

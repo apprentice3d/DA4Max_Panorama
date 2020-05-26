@@ -23,12 +23,16 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 class RenderingExtension extends Autodesk.Viewing.Extension {
+
     constructor(viewer, options) {
         super(viewer, options);
         this._group = null;
-        this._button = null;
+        this.renderButton = null;
         this.configureUI = this.configureUI.bind(this);
         this.onToolbarCreated = this.onToolbarCreated.bind(this);
+
+        this.renderDialog = null;
+        this.panoramaDialog = null;
     }
 
     load() {
@@ -39,7 +43,7 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
     unload() {
         // Clean our UI elements if we added any
         if (this._group) {
-            this._group.removeControl(this._button);
+            this._group.removeControl(this.renderButton);
             if (this._group.getNumberOfControls() === 0) {
                 this.viewer.toolbar.removeControl(this._group);
             }
@@ -56,41 +60,78 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
             this.viewer.toolbar.addControl(this._group);
         }
 
-        // Add a new button to the toolbar group
-        this._button = new Autodesk.Viewing.UI.Button('RenderingDialogButton');
 
         this.configureUI();
 
+        // Render Dialog Setup
         let renderDialog = this.renderDialog;
         if (renderDialog == null) {
             renderDialog = new RenderDialog(this.viewer, this.viewer.container,
-                'renderDialog', 'Render Dialog', {"innerDiv": this.ui});
+                'renderDialog', 'Render Dialog', {"innerDiv": this.renderUI});
         }
 
-
-        this._button.onClick = (ev) => {
+        this.renderButton = new Autodesk.Viewing.UI.Button('RenderingDialogButton');
+        this.renderButton.onClick = (ev) => {
             renderDialog.setVisible(!renderDialog.isVisible());
         };
-        this._button.setToolTip('Render Dialog');
-        this._button.addClass('RenderDialogIcon');
-        this._group.addControl(this._button);
+        this.renderButton.setToolTip('Render Dialog');
+        this.renderButton.addClass('RenderDialogIcon');
+        this._group.addControl(this.renderButton);
 
 
-        let renderButton = document.getElementById("renderButton");
-        console.log(renderButton);
-        renderButton.onclick = (ev) => {
-            console.log("RenderButtonClicked!", this.viewer.getCamera());
+        let renderTrigger = document.getElementById("renderButton");
+        renderTrigger.onclick = (ev) => {
+            let renderingPlacer = document.getElementById("renderingImage");
+            this.viewer.getScreenShot(
+                this.viewer.canvas.width,
+                this.viewer.canvas.height, url => {
+                    renderingPlacer.src = url;
+                })
         }
 
+
+        // Panorama Dialog Setup
+        let panoramaDialog = this.panoramaDialog;
+        if (panoramaDialog == null) {
+            panoramaDialog = new PanoramaDialog(this.viewer, this.viewer.container,
+                'panoramaDialog', 'Panorama Dialog', {"innerDiv": this.panoramaUI});
+        }
+
+        this.panoramaButton = new Autodesk.Viewing.UI.Button('PanoramaDialogButton');
+        this.panoramaButton.onClick = (ev) => {
+            panoramaDialog.setVisible(!panoramaDialog.isVisible());
+        };
+        this.panoramaButton.setToolTip('Panorama Rendering Dialog');
+        this.panoramaButton.addClass('PanoramaDialogIcon');
+        this._group.addControl(this.panoramaButton);
+
+
+        // let panoramaTrigger = document.getElementById("panoramaButton");
+        // panoramaTrigger.onclick = (ev) => {
+        //     console.log("Panorama button clicked.");
+        //
+        // }
 
     }
 
     configureUI() {
-        this.ui = document.createElement("div");
-        this.ui.id = "renderDialogUI";
-        this.ui.classList.add("docking-panel-container-solid-color-a");
-        this.ui.innerHTML = `
+        this.renderUI = document.createElement("div");
+        this.renderUI.id = "renderDialogUI";
+        this.renderUI.classList.add("docking-panel-container-solid-color-a");
+        this.renderUI.innerHTML = `
             <div id="renderDialogContent">
+                <div><span>Some options here ... </span><button id="renderButton" type="button">Render</button></div>
+                <div id="imageContainer"><img id="renderingImage"></div>
+                
+            </div>
+        `;
+
+
+        this.panoramaUI = document.createElement("div");
+        this.panoramaUI.id = "panoramaDialogUI";
+        this.panoramaUI.classList.add("docking-panel-container-solid-color-a");
+        this.panoramaUI.innerHTML = `
+            <div id="panoramaDialogContent">
                 <div><span>Some options here ... </span><button id="renderButton" type="button">Render</button></div>
                 <div><img/></div>
                 
@@ -114,6 +155,26 @@ class RenderDialog extends Autodesk.Viewing.UI.PropertyPanel {
         // use this built-in style to support Themes on Viewer 4+
         this.container.classList.add('docking-panel-container-solid-color-a');
         this.container.id = "RenderDialogContainer";
+
+        this.container.appendChild(options.innerDiv);
+    }
+}
+
+
+// *******************************************
+// Panorama Dialog
+// *******************************************
+class PanoramaDialog extends Autodesk.Viewing.UI.PropertyPanel {
+    constructor(viewer, container, id, title, options) {
+        super(container, id, title, options);
+        this.viewer = viewer;
+
+        Autodesk.Viewing.UI.DockingPanel.call(this, container, id, title, options);
+
+        // the style of the docking panel
+        // use this built-in style to support Themes on Viewer 4+
+        this.container.classList.add('docking-panel-container-solid-color-a');
+        this.container.id = "PanoramaDialogContainer";
 
         this.container.appendChild(options.innerDiv);
     }

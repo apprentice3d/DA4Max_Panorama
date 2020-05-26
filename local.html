@@ -8,6 +8,13 @@
 
     <link rel="stylesheet" href="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/style.min.css" type="text/css">
     <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.min.js"></script>
+
+    <!-- Developer CSS -->
+    <link rel="stylesheet" href="./assets/extensions/RenderingExtension/contents/main.css"/>
+
+    <!-- Developer JS -->
+    <script src="./assets/extensions/RenderingExtension/contents/main.js"></script>
+
 </head>
 
 <style>
@@ -22,20 +29,22 @@
 
 
 <script async>
-    let docs = [{"path": "./radiosity/radiosity.svf", "name": "Design"}];
-    // let docs = [{"path": "./radiosity_AllZero/radiosity.svf", "name": "Design"}];
-    // let docs = [{"path": "./radiosity_0.10.0/radiosity.svf", "name": "Design"}];
-    // let docs = [{"path": "./radiosity_match/radiosity.svf", "name": "Design"}];
-    // let docs = [{"path": "./radiosity_new_cam/radiosity.svf", "name": "Design"}];
+    let docs = [{"path": "./assets/local_viewables/radiosity/radiosity.svf", "name": "Design"}];
+    // let docs = [{"path": "./assets/local_viewables/radiosity_AllZero/radiosity.svf", "name": "Design"}];
+    // let docs = [{"path": "./assets/local_viewables/radiosity_0.10.0/radiosity.svf", "name": "Design"}];
+    // let docs = [{"path": "./assets/local_viewables/radiosity_match/radiosity.svf", "name": "Design"}];
+    // let docs = [{"path": "./assets/local_viewables/radiosity_new_cam/radiosity.svf", "name": "Design"}];
 
     let options = {'docid': docs [0].path, env: 'Local'};
 
-    let viewerDiv = document.getElementById("viewer");
-    oViewer = new Autodesk.Viewing.Private.GuiViewer3D(viewerDiv, {}); // With toolbar
+
     Autodesk.Viewing.Initializer(options, function () {
+        let viewerDiv = document.getElementById("viewer");
+        let oViewer = new Autodesk.Viewing.Private.GuiViewer3D(viewerDiv, {}); // With toolbar
         oViewer.initialize();
         oViewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, function (event) {
-            oViewer.fitToView(true);
+            // oViewer.fitToView(true);
+            oViewer.loadExtension("RenderingExtension");
         });
         oViewer.loadModel(options.docid);
 
