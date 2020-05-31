@@ -30,9 +30,14 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
         this.renderButton = null;
         this.configureUI = this.configureUI.bind(this);
         this.onToolbarCreated = this.onToolbarCreated.bind(this);
+        this.renderingTask = {}
+        this.activeRenderingScreen = null;
 
         this.renderDialog = null;
         this.panoramaDialog = null;
+
+        this.updateRenderTaskList = this.updateRenderTaskList.bind(this);
+        this.setupRenderTrigger = this.setupRenderTrigger.bind(this);
     }
 
     load() {
@@ -78,16 +83,22 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
         this.renderButton.addClass('RenderDialogIcon');
         this._group.addControl(this.renderButton);
 
+        this.setupRenderTrigger();
 
-        let renderTrigger = document.getElementById("renderButton");
-        renderTrigger.onclick = (ev) => {
-            let renderingPlacer = document.getElementById("renderingImage");
-            this.viewer.getScreenShot(
-                this.viewer.canvas.width,
-                this.viewer.canvas.height, url => {
-                    renderingPlacer.src = url;
-                })
-        }
+        // let renderTrigger = document.getElementById("renderButton");
+        // renderTrigger.onclick = (ev) => {
+        //     let renderingPlacer = document.getElementById("renderingImage");
+        //     this.viewer.getScreenShot(
+        //         this.viewer.canvas.width,
+        //         this.viewer.canvas.height, url => {
+        //             renderingPlacer.src = url;
+        //             this.renderingTask[Date.now()] = {screenShot: url,};
+        //
+        //             this.updateRenderTaskList();
+        //             console.log(this.renderingTask)
+        //             //TODO: submit rendering work
+        //         })
+        // }
 
 
         // Panorama Dialog Setup
@@ -120,11 +131,15 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
         this.renderUI.classList.add("docking-panel-container-solid-color-a");
         this.renderUI.innerHTML = `
             <div id="renderDialogContent">
-                <div><span>Some options here ... </span><button id="renderButton" type="button">Render</button></div>
-                <div id="imageContainer"><img id="renderingImage"></div>
+                <div></div>
+                <div id="workarea">
+                    <div id="imageContainer"><img id="renderingImage"></div>
+                    <div id="rendertasks"></div>
+                </div>
                 
             </div>
         `;
+
 
 
         this.panoramaUI = document.createElement("div");
@@ -137,6 +152,53 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
                 
             </div>
         `;
+
+    }
+
+    setupRenderTrigger() {
+
+        //TODO: remove this restriction when understood how to deal with x-overflow in Panel
+        if(Object.keys(this.renderingTask).length > 3) {return;}
+
+        this.viewer.clearSelection();// TODO: Check why slection appears in screenshot
+
+        let rendertasklist = document.getElementById("rendertasks");
+        rendertasklist.innerHTML += `<div id="renderSubmit"><h1>RENDER</h1></div>`;
+        let renderTrigger = document.getElementById("renderSubmit");
+        renderTrigger.onclick = (ev) => {
+            let renderingPlacer = document.getElementById("renderingImage");
+            this.viewer.getScreenShot(
+                this.viewer.canvas.width,
+                this.viewer.canvas.height, url => {
+                    renderingPlacer.src = url;
+                    this.renderingTask[Date.now()] = {screenShot: url,};
+
+                    this.updateRenderTaskList();
+                    console.log(this.renderingTask)
+                    //TODO: submit rendering work
+                })
+        }
+    }
+
+    updateRenderTaskList() {
+        let rendertasklist = document.getElementById("rendertasks");
+        rendertasklist.innerHTML = "";
+        let taskKeys = Object.keys(this.renderingTask);
+        taskKeys.forEach(key => {
+            rendertasklist.innerHTML += `
+            <img class="renderPreview" id=${key} src=${this.renderingTask[key].screenShot}>
+            `
+        })
+
+        this.setupRenderTrigger();
+        let taskListScreens = document.getElementsByClassName("renderPreview");
+        taskListScreens.forEach(img => img.onclick = () => {
+            document.getElementById("renderingImage").src = img.src;
+        })
+        // document.getElementById(key).onclick = () => {
+        //     // document.getElementById("renderingImage").src = this.renderingTask[key].screenShot;
+        //     console.log("Clicked on ", key);
+        // }
 
     }
 }

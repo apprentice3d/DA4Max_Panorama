@@ -13,10 +13,10 @@
 }
 
 #RenderDialogContainer {
-    top: 100px;
+    bottom: 80px;
     right: 10px;
     width: 800px;
-    height: 600px;
+    height: 420px;
     resize: none;
 }
 
@@ -30,9 +30,52 @@
 
 #renderingImage {
     width: 100%;
-    height: 100%;
+    height: auto;
+    min-height: 300px;
 }
 
 #imageContainer {
+    margin: auto;
+    margin-right: 1px;
+}
+
+#workarea {
+    display: grid;
+    grid-template-columns: auto 160px;
+    background-color: black;
+    margin:2px;
+}
+
+#rendertasks {
+    /*display: grid;*/
+    /*grid-template-columns: auto;*/
+    user-select: auto;
+}
+
+#rendertasks img {
+    width: 160px;
+    height: auto;
+    margin: 0;
+    padding: 0;
+}
+
+#renderPreview {
+    border: 1px solid black;
+}
+
+#renderSubmit {
+    border: 2px solid white;
+    height: 81px;
+}
+
+#renderSubmit H1 {
+    text-align: center;
+    vertical-align: center;
+
+}
+
+#renderSubmit:hover {
+    color: black;
+    background-color: #D4D4D4;
 
 }
