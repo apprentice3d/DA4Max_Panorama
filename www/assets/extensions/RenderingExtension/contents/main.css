@@ -21,60 +21,80 @@
 }
 
 #PanoramaDialogContainer {
-    top: 100px;
+    top: 80px;
     right: 10px;
     width: 800px;
-    height: 600px;
+    height: 420px;
     resize: none;
 }
 
-#renderingImage {
-    width: 100%;
+.imagePresentation {
+    width: auto;
     height: auto;
     min-height: 300px;
+    /*min-width: 300px;*/
+    max-width: 100%;
+    /*max-height: 100%;*/
+    margin-left: 0;
+    margin-right: 0;
 }
 
-#imageContainer {
+.imageContainerClass {
     margin: auto;
     margin-right: 1px;
 }
 
-#workarea {
+.workarea {
     display: grid;
     grid-template-columns: auto 160px;
     background-color: black;
     margin:2px;
 }
 
-#rendertasks {
+/*#rendertasks {*/
+/*    !*display: grid;*!*/
+/*    !*grid-template-columns: auto;*!*/
+/*    user-select: auto;*/
+/*}*/
+
+/*#rendertasks img {*/
+/*    width: 160px;*/
+/*    height: auto;*/
+/*    margin: 0;*/
+/*    padding: 0;*/
+/*}*/
+
+.renderlist {
     /*display: grid;*/
     /*grid-template-columns: auto;*/
     user-select: auto;
 }
 
-#rendertasks img {
+.renderlist img {
     width: 160px;
     height: auto;
     margin: 0;
     padding: 0;
 }
 
+
+
 #renderPreview {
     border: 1px solid black;
 }
 
-#renderSubmit {
+.renderTrigger {
     border: 2px solid white;
     height: 81px;
 }
 
-#renderSubmit H1 {
+.renderTrigger H1 {
     text-align: center;
     vertical-align: center;
 
 }
 
-#renderSubmit:hover {
+.renderTrigger:hover {
     color: black;
     background-color: #D4D4D4;
 

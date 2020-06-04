@@ -122,3 +122,109 @@ NOP_VIEWER.getScreenShot(
         popup.document.write(img);
         popup.print();
     });
+
+
+
+
+
+/*
+package main
+
+import (
+	"archive/zip"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+)
+
+func main() {
+	fmt.Println("Up and running")
+	url := "https://developer.api.autodesk.com/oss/v2/signedresources/c4faf083-f7de-4eaf-a5f2-0adddcbb344d?region=US"
+	filename := "./downloads/output.zip"
+	destination := "./workfiles"
+
+	//err := downloadFile(url, filename)
+	err := downloadOutput(url, filename)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = unarchiveDownload(filename, destination)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func unarchiveDownload(filename, destination string) (err error) {
+
+	var filenames []string
+
+	content, err := zip.OpenReader(filename)
+	if err != nil {
+		return err
+	}
+	defer content.Close()
+
+	for _, f := range content.File {
+		fPath := filepath.Join(destination, f.Name)
+		filenames = append(filenames, fPath)
+
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		defer rc.Close()
+
+		out, err := os.Create(filename)
+		if err != nil {
+			return err
+		}
+		defer out.Close()
+
+		_, err = io.Copy(out, rc)
+
+	}
+	return
+}
+
+func downloadFile(url, filename string) (err error) {
+	res, err := http.Get(url)
+	if err != nil {
+		return
+	}
+	defer res.Body.Close()
+
+	out, err := os.Create(filename)
+	if err != nil {
+		return
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, res.Body)
+
+	return
+}
+
+func downloadOutput(link, filename string) (err error){
+	resp, err := http.Get(link)
+
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	result, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer result.Close()
+
+	_, err = io.Copy(result, resp.Body)
+
+	return err
+}
+
+ */

@@ -27,21 +27,42 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
     constructor(viewer, options) {
         super(viewer, options);
         this._group = null;
+
         this.renderButton = null;
         this.configureUI = this.configureUI.bind(this);
         this.onToolbarCreated = this.onToolbarCreated.bind(this);
         this.renderingTask = {}
+        this.renderingPanoramaTask = {}
         this.activeRenderingScreen = null;
 
         this.renderDialog = null;
         this.panoramaDialog = null;
 
+
+        this.ws_address = "ws://localhost:8080/ws";
+        this.websocket = null;
+        this.retry_connection_counter = 0;
+        this.maximum_connection_attempts = 10;
+
+
+        this.setupConnection = this.setupConnection.bind(this);
+        this.onOpen = this.onOpen.bind(this);
+        this.onClose = this.onClose.bind(this);
+        this.onMessage = this.onMessage.bind(this);
+        this.onError = this.onError.bind(this);
+
+
         this.updateRenderTaskList = this.updateRenderTaskList.bind(this);
+        this.updatePanoramaTaskList = this.updatePanoramaTaskList.bind(this);
         this.setupRenderTrigger = this.setupRenderTrigger.bind(this);
+        this.setupPanoramaTrigger = this.setupPanoramaTrigger.bind(this);
+
+        this.getCameraCoordinates = this.getCameraCoordinates.bind(this);
     }
 
     load() {
         console.log('RenderingExtension has been loaded');
+        this.setupConnection(this.ws_address);
         return true;
     }
 
@@ -83,24 +104,6 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
         this.renderButton.addClass('RenderDialogIcon');
         this._group.addControl(this.renderButton);
 
-        this.setupRenderTrigger();
-
-        // let renderTrigger = document.getElementById("renderButton");
-        // renderTrigger.onclick = (ev) => {
-        //     let renderingPlacer = document.getElementById("renderingImage");
-        //     this.viewer.getScreenShot(
-        //         this.viewer.canvas.width,
-        //         this.viewer.canvas.height, url => {
-        //             renderingPlacer.src = url;
-        //             this.renderingTask[Date.now()] = {screenShot: url,};
-        //
-        //             this.updateRenderTaskList();
-        //             console.log(this.renderingTask)
-        //             //TODO: submit rendering work
-        //         })
-        // }
-
-
         // Panorama Dialog Setup
         let panoramaDialog = this.panoramaDialog;
         if (panoramaDialog == null) {
@@ -116,12 +119,8 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
         this.panoramaButton.addClass('PanoramaDialogIcon');
         this._group.addControl(this.panoramaButton);
 
-
-        // let panoramaTrigger = document.getElementById("panoramaButton");
-        // panoramaTrigger.onclick = (ev) => {
-        //     console.log("Panorama button clicked.");
-        //
-        // }
+        this.setupRenderTrigger();
+        this.setupPanoramaTrigger();
 
     }
 
@@ -132,23 +131,24 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
         this.renderUI.innerHTML = `
             <div id="renderDialogContent">
                 <div></div>
-                <div id="workarea">
-                    <div id="imageContainer"><img id="renderingImage"></div>
-                    <div id="rendertasks"></div>
+                <div class="workarea">
+                    <div id="imageContainer" class="imageContainerClass" ><img id="renderingImage" class="imagePresentation"></div>
+                    <div id="rendertasks" class="renderlist"></div>
                 </div>
                 
             </div>
         `;
 
-
-
         this.panoramaUI = document.createElement("div");
         this.panoramaUI.id = "panoramaDialogUI";
         this.panoramaUI.classList.add("docking-panel-container-solid-color-a");
         this.panoramaUI.innerHTML = `
-            <div id="panoramaDialogContent">
-                <div><span>Some options here ... </span><button id="renderButton" type="button">Render</button></div>
-                <div><img/></div>
+            <div id="PanoramaDialogContent">
+                <div></div>
+                <div class="workarea">
+                    <div id="panoramaContainer" class="imageContainerClass"><img id="renderingPanorama" class="imagePresentation" src="" alt="No renderings"></div>
+                    <div id="renderpanoramatasks" class="renderlist"></div>
+                </div>
                 
             </div>
         `;
@@ -162,21 +162,110 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
 
         this.viewer.clearSelection();// TODO: Check why slection appears in screenshot
 
+        let urn = this.viewer.model.loader.svfUrn;
         let rendertasklist = document.getElementById("rendertasks");
-        rendertasklist.innerHTML += `<div id="renderSubmit"><h1>RENDER</h1></div>`;
+        rendertasklist.innerHTML += `<div id="renderSubmit" class="renderTrigger"><h1>RENDER</h1></div>`;
         let renderTrigger = document.getElementById("renderSubmit");
         renderTrigger.onclick = (ev) => {
+            let taskID = Date.now();
             let renderingPlacer = document.getElementById("renderingImage");
             this.viewer.getScreenShot(
                 this.viewer.canvas.width,
                 this.viewer.canvas.height, url => {
                     renderingPlacer.src = url;
-                    this.renderingTask[Date.now()] = {screenShot: url,};
+                    this.renderingTask[taskID] = {screenShot: url,};
 
                     this.updateRenderTaskList();
-                    console.log(this.renderingTask)
-                    //TODO: submit rendering work
+
+
                 })
+            //TODO: submit rendering work
+            const cameraParams = this.getCameraCoordinates();
+            const renderJob = {
+                "id": urn,
+                "task_id": taskID,
+                "type": "rendering",
+                "position": cameraParams.position,
+                "rotation": cameraParams.rotation,
+                "fov": cameraParams.fov,
+                //TODO: make rendering size as an option to user
+                "rendering_size": cameraParams.renderingSize
+            }
+            this.websocket.send(JSON.stringify(renderJob));
+
+            console.log("RenderJob submitted: ", renderJob);
+        }
+    }
+
+
+    setupPanoramaTrigger() {
+
+        //TODO: remove this restriction when understood how to deal with x-overflow in Panel
+        if(Object.keys(this.renderingPanoramaTask).length > 3) {return;}
+
+        this.viewer.clearSelection();// TODO: Check why selection appears in screenshot
+
+        let urn = this.viewer.model.loader.svfUrn;
+        let renderpanoramatasklist = document.getElementById("renderpanoramatasks");
+        renderpanoramatasklist.innerHTML += `<div id="panoramaSubmit" class="renderTrigger"><h1>RENDER</h1></div>`;
+        let renderSubmit = document.getElementById("panoramaSubmit");
+        renderSubmit.onclick = (ev) => {
+            let taskID = Date.now();
+            let renderingPlacer = document.getElementById("renderingPanorama");
+            this.viewer.getScreenShot(
+                this.viewer.canvas.width,
+                this.viewer.canvas.height, url => {
+                    renderingPlacer.src = url;
+                    this.renderingPanoramaTask[taskID] = {screenShot: url,};
+
+                    this.updatePanoramaTaskList();
+
+
+                })
+            //TODO: submit rendering work
+            const cameraParams = this.getCameraCoordinates();
+            const renderJob = {
+                "id": urn,
+                "task_id": taskID,
+                "type": "panorama",
+                "position": cameraParams.position,
+                "rotation": cameraParams.rotation,
+                "fov": cameraParams.fov,
+                //TODO: make rendering size as an option to user
+                "rendering_size": cameraParams.renderingSize
+            }
+            this.websocket.send(JSON.stringify(renderJob));
+
+            console.log("RenderJob submitted: ", renderJob);
+        }
+    }
+
+    getCameraCoordinates() {
+        let cam = this.viewer.getCamera()
+
+        let matrix = cam.matrixWorld
+
+        let position = new THREE.Vector3();
+        let rotation = new THREE.Quaternion();
+        let scale = new THREE.Vector3();
+
+        matrix.decompose(position, rotation, scale)
+
+        //TODO: replace magic numbers with derived ones
+        let offset = new THREE.Vector3(60.5, -24.5, 60.5)
+
+        position.addVectors(position, offset);
+
+        let aspect = cam.aspect;
+
+        //TODO: derive the 1.67 multiplicator
+        let new_fov = cam.fov*1.67;
+
+        return {
+            position: position.toArray(),
+            rotation: rotation.toArray(),
+            fov: new_fov,
+            renderingSize: [this.viewer.canvas.width, this.viewer.canvas.height]
         }
     }
 
@@ -201,6 +290,90 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
         // }
 
     }
+
+    updatePanoramaTaskList() {
+        let rendertasklist = document.getElementById("renderpanoramatasks");
+        rendertasklist.innerHTML = "";
+        let taskKeys = Object.keys(this.renderingPanoramaTask);
+        taskKeys.forEach(key => {
+            rendertasklist.innerHTML += `
+            <img class="renderPreview" id=${key} src=${this.renderingPanoramaTask[key].screenShot}>
+            `
+        })
+
+        this.setupPanoramaTrigger();
+        let taskListScreens = document.getElementsByClassName("renderPreview");
+        taskListScreens.forEach(img => img.onclick = () => {
+            document.getElementById("renderingPanorama").src = img.src;
+        })
+        // document.getElementById(key).onclick = () => {
+        //     // document.getElementById("renderingImage").src = this.renderingTask[key].screenShot;
+        //     console.log("Clicked on ", key);
+        // }
+
+    }
+
+
+    /*
+     * CONNECTION PART
+     */
+
+    setupConnection(url) {
+        this.websocket = new WebSocket(url);
+        this.websocket.onopen = this.onOpen;
+        this.websocket.onclose = this.onClose;
+        this.websocket.onmessage = this.onMessage;
+        this.websocket.onerror = this.onError;
+    }
+
+
+    onOpen(evt) {
+        console.info("Connection opened: ", evt);
+        this.retry_connection_counter = 0;
+
+    }
+
+    onClose(evt) {
+        console.log("Connection closed: ", evt);
+
+        let reconnect = (timeout) => {
+            console.log("TIMEOUT:", timeout);
+            setTimeout(() => {
+                if (
+                    this.retry_connection_counter++ < this.maximum_connection_attempts
+                    && this.websocket.type !== "open") {
+                    console.log("Retrying connection ...", this.retry_connection_counter);
+                    this.setupConnection(this.ws_address);
+                } else {
+                    console.log("Stopped connecting!");
+                }
+            },timeout)
+        };
+
+        reconnect(1000*this.retry_connection_counter);
+    }
+
+    onMessage(evt) {
+        let data;
+        try {
+            data = JSON.parse(evt.data);
+        } catch (err) {
+            console.log("Received message is not a JSON: ", evt.data);
+            return
+        }
+        console.log("RECEIVED:", data);
+    }
+
+    onError(evt) {
+        console.log("Error received: ", evt);
+    }
+
+
+
+
+
+
+
 }
 
 // *******************************************
@@ -240,6 +413,10 @@ class PanoramaDialog extends Autodesk.Viewing.UI.PropertyPanel {
 
         this.container.appendChild(options.innerDiv);
     }
+
+
+
+
 }
 
 Autodesk.Viewing.theExtensionManager.registerExtension('RenderingExtension', RenderingExtension);

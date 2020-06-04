@@ -1,0 +1,4 @@
+github.com/apprentice3d/forge-api-go-client v0.1.0 h1:BI6U0GUIbp53r8WMgQ3qt5R6cbUvUfTCjWKFf3KdcvI=
+github.com/apprentice3d/forge-api-go-client v0.1.0/go.mod h1:zco+aF8YQfGGXy2anwF73XS9u0THEFgW57i4I3bF9ic=
+github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
+github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
