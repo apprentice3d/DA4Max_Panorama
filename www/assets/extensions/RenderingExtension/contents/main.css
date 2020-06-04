@@ -68,6 +68,7 @@
     /*display: grid;*/
     /*grid-template-columns: auto;*/
     user-select: auto;
+    border-left: 1px solid #4d4d4d;
 }
 
 .renderlist img {
@@ -75,7 +76,7 @@
     height: auto;
     margin: 0;
     padding: 0;
-    border-left: 1px solid #959494;
+
 }
 
 
@@ -99,4 +100,9 @@
     color: black;
     background-color: #D4D4D4;
 
+}
+
+#panorama {
+    width: 635px;
+    height: 309px;
 }

@@ -122,6 +122,25 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
         this.setupRenderTrigger();
         this.setupPanoramaTrigger();
 
+
+
+
+
+        //TODO: REMOVE THIS
+        let container = document.getElementById("panoramaContainer")
+        container.innerHTML=`<div id="panorama" class="imagePresentation"></div>`
+        pannellum.viewer('panorama', {
+            "type": "cubemap",
+            "cubeMap": [
+                "./images/1591277900767/front.png",
+                "./images/1591277900767/left.png",
+                "./images/1591277900767/back.png",
+                "./images/1591277900767/right.png",
+                "./images/1591277900767/top.png",
+                "./images/1591277900767/bottom.png",
+            ]
+        });
+
     }
 
     configureUI() {
@@ -152,6 +171,8 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
                 
             </div>
         `;
+
+
 
     }
 
@@ -328,7 +349,6 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
 
     setupConnection(url) {
         this.websocket = new WebSocket(url);
-        window.websoket = this.websocket;
         this.websocket.onopen = this.onOpen;
         this.websocket.onclose = this.onClose;
         this.websocket.onmessage = this.onMessage;
@@ -372,11 +392,24 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
         }
         console.log("RECEIVED:", data);
         if (data.type && data.type == "rendering") {
-            var lister = document.getElementById(data.task_id)
+            let lister = document.getElementById(data.task_id)
             lister.src = data.urls[0]
             this.renderingTask[data.task_id]["rendering"] = data.urls[0];
+            console.log("Updated rendering tasks: ", this.renderingTask)
         }
-        console.log("Updated rendering tasks: ", this.renderingTask)
+        if (data.type && data.type == "panorama") {
+            let lister = document.getElementById(data.task_id)
+            lister.src = data.urls[0]
+            this.renderingPanoramaTask[data.task_id]["rendering"] = data.urls;
+            let container = document.getElementById("panoramaContainer")
+            container.innerHTML=`<div id="panorama"></div>`
+            pannellum.viewer('panorama', {
+                "type": "cubemap",
+                "cubeMap": this.renderingPanoramaTask[data.task_id]["rendering"]
+            });
+            console.log("Updated rendering tasks: ", this.renderingTask)
+        }
+
     }
 
     onError(evt) {

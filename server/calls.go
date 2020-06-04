@@ -71,7 +71,7 @@ func (service *ForgeServices) renderingJob(task RenderTaskRequest) {
 
 
 	//TODO change the serverUrl to be autodetermined
-	servicePath := "http://25de12d837d9.ngrok.io"
+	servicePath := "http://6e6969a771e0.ngrok.io"
 	workerID, err := service.SendWorkItem("Denix.RenderAllCamerasWithScriptParam+test",
 		"https://sample-collection.s3.amazonaws.com/assets/models/radiosity.max",
 		signedUrl,
