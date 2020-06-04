@@ -71,9 +71,7 @@ fn renderViewAtPosition x y z size view = (
 --render a view given position, rotation and FOV
 --used to match Viewer camera and get rendering of that camera
 fn renderAtView pos rot fov name w h = (
-	cam = freecamera fov:fov
-	cam.position = [pos.x, pos.y, pos.z]
-	cam.rotation = (quat rot.x rot.y rot.z rot.w)
+	cam = freecamera rotation:(quat rot.x rot.y rot.z rot.w) position:[pos.x, pos.y, pos.z] fov:fov
 	render camera:cam outputsize:[w, h] outputfile:(sysInfo.currentdir + "/output/" + name + ".png")
 
 )

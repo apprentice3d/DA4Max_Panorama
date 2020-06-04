@@ -80,12 +80,19 @@ func (service ForgeServices) DAResults(writer http.ResponseWriter, request *http
 
 	log.Printf("Received results of job %s with result: %s\n", result.Id, result.Status)
 
+	if result.Status != "success" {
+		return
+	}
+
+	filepaths, err := downloadAndUnarhiveResult(downloadResults, taskId)
+
+
 	client.WriteJSON(ClientInform{
 		TaskId: taskId,
 		Type: taskInfo.Type,
 		Status: result.Status,
-		Urls: []string{"/scripts", downloadResults}, //TODO: Change this to the file itself
+		Urls: filepaths,
 	})
-
-
 }
+
+

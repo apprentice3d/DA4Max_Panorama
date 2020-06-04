@@ -146,7 +146,7 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
             <div id="PanoramaDialogContent">
                 <div></div>
                 <div class="workarea">
-                    <div id="panoramaContainer" class="imageContainerClass"><img id="renderingPanorama" class="imagePresentation" src="" alt="No renderings"></div>
+                    <div id="panoramaContainer" class="imageContainerClass"><img id="renderingPanorama" class="imagePresentation" src=""></div>
                     <div id="renderpanoramatasks" class="renderlist"></div>
                 </div>
                 
@@ -173,13 +173,14 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
                 this.viewer.canvas.width,
                 this.viewer.canvas.height, url => {
                     renderingPlacer.src = url;
-                    this.renderingTask[taskID] = {screenShot: url,};
+                    this.renderingTask[taskID] = {screenShot: url, state: this.viewer.getState()};
 
                     this.updateRenderTaskList();
 
 
                 })
-            //TODO: submit rendering work
+
+            if (this.websocket.readyState != 1) { return; }
             const cameraParams = this.getCameraCoordinates();
             const renderJob = {
                 "id": urn,
@@ -216,13 +217,14 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
                 this.viewer.canvas.width,
                 this.viewer.canvas.height, url => {
                     renderingPlacer.src = url;
-                    this.renderingPanoramaTask[taskID] = {screenShot: url,};
+                    this.renderingPanoramaTask[taskID] = {screenShot: url, state: this.viewer.getState()};
 
                     this.updatePanoramaTaskList();
 
 
                 })
-            //TODO: submit rendering work
+
+            if (this.websocket.readyState != 1) { return; }
             const cameraParams = this.getCameraCoordinates();
             const renderJob = {
                 "id": urn,
@@ -275,15 +277,18 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
         let taskKeys = Object.keys(this.renderingTask);
         taskKeys.forEach(key => {
             rendertasklist.innerHTML += `
-            <img class="renderPreview" id=${key} src=${this.renderingTask[key].screenShot}>
+            <img class="renderPreview" id=${key} src=${this.renderingTask[key].rendering || this.renderingTask[key].screenShot}>
             `
         })
 
-        this.setupRenderTrigger();
-        let taskListScreens = document.getElementsByClassName("renderPreview");
-        taskListScreens.forEach(img => img.onclick = () => {
+
+        let viewer = this.viewer;
+        let renderingTask = this.renderingTask
+        rendertasklist.children.forEach(img => img.onclick = () => {
             document.getElementById("renderingImage").src = img.src;
+            viewer.restoreState(renderingTask[img.id].state)
         })
+        this.setupRenderTrigger();
         // document.getElementById(key).onclick = () => {
         //     // document.getElementById("renderingImage").src = this.renderingTask[key].screenShot;
         //     console.log("Clicked on ", key);
@@ -301,11 +306,14 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
             `
         })
 
-        this.setupPanoramaTrigger();
-        let taskListScreens = document.getElementsByClassName("renderPreview");
-        taskListScreens.forEach(img => img.onclick = () => {
+
+        let viewer = this.viewer;
+        let renderingPanoramaTask = this.renderingPanoramaTask
+        rendertasklist.children.forEach(img => img.onclick = () => {
             document.getElementById("renderingPanorama").src = img.src;
+            viewer.restoreState(renderingPanoramaTask[img.id].state)
         })
+        this.setupPanoramaTrigger();
         // document.getElementById(key).onclick = () => {
         //     // document.getElementById("renderingImage").src = this.renderingTask[key].screenShot;
         //     console.log("Clicked on ", key);
@@ -320,6 +328,7 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
 
     setupConnection(url) {
         this.websocket = new WebSocket(url);
+        window.websoket = this.websocket;
         this.websocket.onopen = this.onOpen;
         this.websocket.onclose = this.onClose;
         this.websocket.onmessage = this.onMessage;
@@ -362,6 +371,12 @@ class RenderingExtension extends Autodesk.Viewing.Extension {
             return
         }
         console.log("RECEIVED:", data);
+        if (data.type && data.type == "rendering") {
+            var lister = document.getElementById(data.task_id)
+            lister.src = data.urls[0]
+            this.renderingTask[data.task_id]["rendering"] = data.urls[0];
+        }
+        console.log("Updated rendering tasks: ", this.renderingTask)
     }
 
     onError(evt) {

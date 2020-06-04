@@ -1,15 +1,18 @@
 package server
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
@@ -38,11 +41,6 @@ func (service *ForgeServices) reader(conn *websocket.Conn) {
 
 		log.Printf("Received a task: {%s , %d}\n", data.Type, data.TaskID)
 
-		// TODO: Chenge this from global to service field
-		//if tasks == nil {
-		//	tasks = make(map[uint64]*websocket.Conn)
-		//}
-		//tasks[data.TaskID] = conn
 		clients = append(clients, ClientRegistry{
 			conn,
 			data.TaskID,
@@ -50,12 +48,8 @@ func (service *ForgeServices) reader(conn *websocket.Conn) {
 
 		taskJournal[data.TaskID] = data
 
-		switch data.Type {
-		case "rendering":
-			go service.renderingJob(data)
-		case "panorama":
-			log.Println("Received a panorama task")
-		}
+		service.renderingJob(data)
+
 	}
 }
 
@@ -77,7 +71,7 @@ func (service *ForgeServices) renderingJob(task RenderTaskRequest) {
 
 
 	//TODO change the serverUrl to be autodetermined
-	servicePath := "http://eace0c4d12c8.ngrok.io"
+	servicePath := "http://25de12d837d9.ngrok.io"
 	workerID, err := service.SendWorkItem("Denix.RenderAllCamerasWithScriptParam+test",
 		"https://sample-collection.s3.amazonaws.com/assets/models/radiosity.max",
 		signedUrl,
@@ -124,8 +118,15 @@ func createScriptFileFromTask(task RenderTaskRequest) (scriptPath string, err er
 	}
 
 	//TODO: Check how to pass to script template the task itself and avoid taskParams
-	scriptTemplate, err := template.New("rendering").Parse("renderAtView  [{{.Posx}}, {{.Posy}}, {{.Posz}}] " +
-		"[{{.Rotx}}, {{.Roty}}, {{.Rotz}}, {{.Rotw}}] {{.Fov}} \"{{.TaskID}}\" {{.Width}} {{.Height}}")
+	var scriptTemplate *template.Template
+
+	switch task.Type {
+	case "rendering":
+		scriptTemplate, err = template.New("rendering").Parse("renderAtView  [{{.Posx}}, {{.Posy}}, {{.Posz}}] " +
+			"[{{.Rotx}}, {{.Roty}}, {{.Rotz}}, {{.Rotw}}] {{.Fov}} \"{{.TaskID}}\" {{.Width}} {{.Height}}")
+	case "panorama":
+		scriptTemplate, err = template.New("panorama").Parse("renderPanoramaAtPoint  {{.Posx}} {{.Posy}} {{.Posz}} {{.Width}}")
+	}
 
 	if err != nil {
 		return "", err
@@ -256,4 +257,104 @@ func (service ForgeServices) SendWorkItem(activityid, input, output, script, cal
 	err = decoder.Decode(&workItem)
 
 	return
+}
+
+func downloadAndUnarhiveResult(downloads string, taskid uint64) (filepaths []string, err error) {
+	outputDir := fmt.Sprintf("./www/images/%d", taskid)
+	os.MkdirAll(outputDir, 0700)
+	err = downloadOutput(downloads, outputDir + "/output.zip")
+	if err != nil {
+		return
+	}
+
+	filepaths, err = Unzip(outputDir + "/output.zip", outputDir)
+	return
+}
+
+
+func downloadOutput(link, filename string) (err error){
+
+	resp, err := http.Get(link)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("status", resp.Status)
+	if resp.StatusCode != 200 {
+		return
+	}
+
+	// Create the file
+	out, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return
+}
+
+// Unzip will decompress a zip archive, moving all files and folders
+// within the zip file (parameter 1) to an output directory (parameter 2).
+func Unzip(src string, dest string) ([]string, error) {
+
+	var filenames []string
+
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return filenames, err
+	}
+	defer r.Close()
+
+	for _, f := range r.File {
+
+		// Store filename/path for returning and using later on
+		fpath := filepath.Join(dest, f.Name)
+
+		// Check for ZipSlip. More Info: http://bit.ly/2MsjAWE
+		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
+			return filenames, fmt.Errorf("%s: illegal file path", fpath)
+		}
+
+		filenames = append(filenames, fpath[4:])
+
+		if f.FileInfo().IsDir() {
+			// Make Folder
+			os.MkdirAll(fpath, os.ModePerm)
+			continue
+		}
+
+		// Make File
+		if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+			return filenames, err
+		}
+
+		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return filenames, err
+		}
+
+		rc, err := f.Open()
+		if err != nil {
+			return filenames, err
+		}
+
+		_, err = io.Copy(outFile, rc)
+
+		// Close the file without defer to close before next iteration of loop
+		outFile.Close()
+		rc.Close()
+
+		if err != nil {
+			return filenames, err
+		}
+	}
+	return filenames, nil
 }
